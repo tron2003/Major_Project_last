@@ -57,7 +57,7 @@ def create_model(seq_length):
 
 
 # Load the model
-model_path = 'model/model_500_100_epocs.keras'
+model_path = 'model\model_500_100_epocs.keras'
 if not os.path.exists(model_path):
     st.error(
         f"Model file not found at {model_path}. Current directory contents: {os.listdir('.')}")
