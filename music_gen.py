@@ -57,11 +57,12 @@ def create_model(seq_length):
 
 
 # Load the model
-model_path = "model_500_100_epocs.keras"  # Update with your model path
+model_path = 'model/model_500_100_epocs.keras'  # Update with your model path
 model = create_model(seq_length=10)
 
 try:
-    model.load_weights(model_path)
+    model = tf.keras.models.load_model(model_path)
+
 except Exception as e:
     st.error(f"Error loading model: {e}")
 
