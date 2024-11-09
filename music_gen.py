@@ -57,16 +57,13 @@ def create_model(seq_length):
 
 
 # Load the model
-model_path = 'model/model_500_100_epocs.keras'  # Update with your model path
-model = create_model(seq_length=10)
-
-try:
+model_path = 'model/model_500_100_epocs.keras'
+if not os.path.exists(model_path):
+    st.error(
+        f"Model file not found at {model_path}. Current directory contents: {os.listdir('.')}")
+else:
     model = tf.keras.models.load_model(model_path)
 
-except Exception as e:
-    st.error(f"Error loading model: {e}")
-
-# Function to play the MIDI file using Pygame
 
 
 def play_music(midi_filename):
