@@ -1,8 +1,8 @@
 altair==5.4.1
-numpy==1.23.5
-pandas==2.2.3
-pretty_midi==0.2.10
-pygame==2.6.1
-streamlit==1.38.0
-tensorflow==2.10.0
-
+numpy>=1.23.5,<2.0
+pandas>=2.2.3,<3.0
+pretty_midi>=0.2.10
+pygame>=2.6.1
+streamlit>=1.38.0,<2.0
+tensorflow>=2.10.0,<3.0
+protobuf>=3.9.2,<6
