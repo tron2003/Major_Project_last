@@ -114,6 +114,51 @@ def create_midi_file(output_file, notes, instrument):
     midi_data.write(output_file)
     st.success(f"MIDI file '{output_file}' created successfully.")
 
+# Function to generate notes using the model
+
+
+def generate_notes_from_model(model, seq_length=10):
+    # Start with a random initial sequence or zeros (or you could input any sequence)
+    # [seq_length, 3] -> pitch/step/duration
+    initial_sequence = tf.zeros((1, seq_length, 3), dtype=tf.float32)
+
+    generated_notes = []
+    current_sequence = initial_sequence
+
+    for _ in range(seq_length):
+        # Predict the next sequence using the model
+        predictions = model(current_sequence)
+
+        # Extract pitch, step, and duration predictions
+        pitch_pred = predictions['pitch']
+        step_pred = predictions['step']
+        duration_pred = predictions['duration']
+
+        # Convert the predictions into actual note values
+        # Convert pitch to integer
+        pitch = tf.argmax(pitch_pred, axis=-1).numpy()[0]
+        step = step_pred.numpy()[0]  # Direct prediction for step
+        duration = duration_pred.numpy()[0]  # Direct prediction for duration
+
+        # Ensure pitch, step, and duration are all floats (if necessary)
+        pitch = float(pitch)
+        step = float(step)
+        duration = float(duration)
+
+        # Create a pretty_midi note using predicted pitch, step (time), and duration
+        start_time = step  # Use 'step' as the start time of the note
+        end_time = start_time + duration
+        note = pretty_midi.Note(velocity=100, pitch=int(
+            pitch), start=start_time, end=end_time)
+
+        generated_notes.append(note)
+
+        # Update the sequence for the next prediction (Shift the sequence)
+        current_sequence = tf.concat([current_sequence[:, 1:, :], tf.reshape(
+            tf.convert_to_tensor([[pitch, step, duration]], dtype=tf.float32), (1, 1, 3))], axis=1)
+
+    return generated_notes
+
 
 # Streamlit Interface
 st.title("Music Generation from LSTM Network")
@@ -125,12 +170,13 @@ with st.sidebar:
     model_upload = st.file_uploader(
         "Upload Model Weights", type=["keras", "h5"])
 
-    # Upload an Input MIDI File
-    midi_upload = st.file_uploader("Upload a MIDI File", type=["mid", "midi"])
-
     # Instrument selection
     selected_instrument = st.selectbox(
         "Choose an Instrument", options=list(INSTRUMENTS.keys()))
+
+    # Select notes length for visualization
+    num_notes = st.slider("Number of Notes", min_value=5,
+                          max_value=20, value=5)
 
 # Load model if uploaded
 model = None
@@ -139,14 +185,23 @@ if model_upload:
     if model:
         st.success("Model weights successfully loaded!")
 
-# Show the button to play music after the model is loaded and an input MIDI file is uploaded
-if model and midi_upload:
-    play_button = st.button("Play MIDI File")
+# Show buttons to generate and play music after model is loaded
+if model:
+    col1, col2 = st.columns(2)
+    with col1:
+        generate_button = st.button("Generate MIDI File")
+    with col2:
+        play_button = st.button("Play MIDI File")
 
-    # Play the uploaded MIDI file when the button is clicked
+    # Generate MIDI file when button is clicked
+    if generate_button:
+        notes = generate_notes_from_model(model)
+        midi_filename = 'generated_output.mid'
+        create_midi_file(midi_filename, notes, selected_instrument)
+        st.audio(midi_filename)
+
+    # Play the generated MIDI file when button is clicked
     if play_button:
-        midi_filename = 'uploaded_input.mid'
-        with open(midi_filename, 'wb') as f:
-            f.write(midi_upload.read())
+        midi_filename = 'generated_output.mid'
         play_music(midi_filename)
-        st.write("Playing the uploaded MIDI file...")
+        st.write("Music is playing...")
